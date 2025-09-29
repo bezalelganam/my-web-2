@@ -6,18 +6,25 @@
 <title>האתר שלי</title>
 <link rel="stylesheet" href="style.css">
 <style>
-  /* make a left column for the iframe */
+  /* left panel for the iframe */
   .left-panel {
     float: left;
-    width: 320px; /* adjust width as you like */
+    width: 320px;           /* width of the visible area */
+    height: 400px;          /* height of the visible area */
+    overflow: hidden;
     margin-right: 20px;
+    border: 1px solid #ccc;
   }
   .left-panel iframe {
-    width: 100%;
-    height: 600px; /* adjust height as you like */
+    /* size of the loaded page inside */
+    width: 1000px;          /* original page width */
+    height: 1200px;         /* original page height */
     border: none;
+    /* zoom into the area you want */
+    transform: scale(0.32); /* zoom level */
+    transform-origin: 0 0;  /* anchor top-left */
   }
-  /* wrap the rest of the content to sit next to the iframe */
+  /* wrap rest of the content next to iframe */
   .content-wrapper {
     overflow: hidden;
   }
@@ -25,9 +32,9 @@
 </head>
 <body>
 
+<!-- Live Chance page cropped -->
 <div class="left-panel">
-  <!-- Live Chance page -->
-  <iframe src="https://www.pais.co.il/chance/"></iframe>
+  <iframe src="https://www.pais.co.il/chance/" scrolling="no"></iframe>
 </div>
 
 <div class="content-wrapper">
