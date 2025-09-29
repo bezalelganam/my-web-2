@@ -1,0 +1,72 @@
+
+<!DOCTYPE html>
+<html lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>האתר שלי</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+    <img src="https://via.placeholder.com/1000x300.png?text=תמונה+יפה+שלך" alt="תמונה יפה">
+    <h1>כותרת ראשית של האתר</h1>
+    <p>טקסט שתוכל לשנות כאן כדי להסביר על האתר שלך</p>
+</header>
+
+<div class="section">
+    <h2>הרשם לאתר</h2>
+    <form id="signupForm">
+        <div class="form-group">
+            <label>שם מלא:</label>
+            <input type="text" id="name" required>
+        </div>
+        <div class="form-group">
+            <label>מייל:</label>
+            <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+            <label>סיסמה:</label>
+            <input type="password" id="password" required>
+        </div>
+        <button type="submit">הרשם</button>
+    </form>
+</div>
+
+<div class="section">
+    <h2>המוצרים שלנו</h2>
+    <div class="products">
+        <div class="product">
+            <img src="https://via.placeholder.com/300x200.png?text=מוצר+1" alt="מוצר 1">
+            <h3>מוצר 1</h3>
+            <p>מחיר: 100₪</p>
+            <button onclick="addToCart('מוצר 1',100)">הוסף לעגלה</button>
+        </div>
+        <div class="product">
+            <img src="https://via.placeholder.com/300x200.png?text=מוצר+2" alt="מוצר 2">
+            <h3>מוצר 2</h3>
+            <p>מחיר: 200₪</p>
+            <button onclick="addToCart('מוצר 2',200)">הוסף לעגלה</button>
+        </div>
+        <div class="product">
+            <img src="https://via.placeholder.com/300x200.png?text=מוצר+3" alt="מוצר 3">
+            <h3>מוצר 3</h3>
+            <p>מחיר: 300₪</p>
+            <button onclick="addToCart('מוצר 3',300)">הוסף לעגלה</button>
+        </div>
+    </div>
+</div>
+
+<div class="cart">
+    <h3>העגלה שלך</h3>
+    <ul id="cartItems"></ul>
+    <p>סכום כולל: <span id="total">0</span>₪</p>
+    <button onclick="checkout()">לשלם</button>
+</div>
+
+<a class="whatsapp-button" href="https://wa.me/972502332829" target="_blank">צ'אט WhatsApp</a>
+
+<script src="script.js"></script>
+</body>
+</html>
