@@ -7,6 +7,31 @@
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .cart-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+            
+            .cart-item img {
+                width: 80px;
+                height: 80px;
+            }
+            
+            input, textarea, button {
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
+            
+            .quantity-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+        }
+    </style>
 </head>
 <body class="bg-black text-white">
     <!-- Navigation -->
@@ -140,14 +165,15 @@
         }
 
         async function getUserCart(userId) {
-            if (userCartCache) {
-                return userCartCache;
+            if (userCartCache && userCartCache.userId === userId) {
+                return userCartCache.cart;
             }
             
             const userDoc = await db.collection('users').doc(userId).get();
             const userData = userDoc.data();
-            userCartCache = userData.cart || [];
-            return userCartCache;
+            const cart = userData.cart || [];
+            userCartCache = { userId: userId, cart: cart };
+            return cart;
         }
 
         function renderCart(cart) {
@@ -177,7 +203,7 @@
                 const itemTotal = parseFloat(item.price) * (item.quantity || 1);
                 subtotal += itemTotal;
                 html += `
-                    <div class="flex items-center justify-between py-4 border-b border-gray-800">
+                    <div class="flex items-center justify-between py-4 border-b border-gray-800 cart-item">
                         <div class="flex items-center">
                             <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded">
                             <div class="ml-4">
@@ -243,7 +269,7 @@
                         cart: cart
                     });
                     
-                    userCartCache = cart;
+                    userCartCache = { userId: user.uid, cart: cart };
                     renderCart(cart);
                 }
             } catch (error) {
@@ -276,7 +302,7 @@
                         cart: cart
                     });
                     
-                    userCartCache = cart;
+                    userCartCache = { userId: user.uid, cart: cart };
                     renderCart(cart);
                 }
             } catch (error) {
@@ -314,7 +340,7 @@
                     cart: []
                 });
                 
-                userCartCache = [];
+                userCartCache = { userId: user.uid, cart: [] };
 
                 // Show success message
                 alert(`Order confirmed! Order ID: ${orderRef.id}`);

@@ -880,13 +880,7 @@ async function handleForgotPassword() {
     // 🔥 FIREBASE ORDERS FUNCTIONS
     async function handleCheckout() {
         const user = auth.currentUser;
-        const cart = JSON.parse(localStorage.getItem('cart')) || [];
         
-        if (cart.length === 0) {
-            alert('Your cart is empty!');
-            return;
-        }
-
         if (!user) {
             alert('Please login to complete your purchase.');
             window.location.hash = 'login';
@@ -894,6 +888,14 @@ async function handleForgotPassword() {
         }
 
         try {
+            // Get user's cart from Firebase
+            const cart = await getUserCart(user.uid);
+            
+            if (cart.length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+
             // Create order in Firestore
             const order = {
                 userId: user.uid,
@@ -912,8 +914,14 @@ async function handleForgotPassword() {
                 orders: firebase.firestore.FieldValue.arrayUnion(orderRef.id)
             });
 
-            // Clear cart
-            localStorage.setItem('cart', JSON.stringify([]));
+            // Clear cart in Firebase
+            await db.collection('users').doc(user.uid).update({
+                cart: []
+            });
+            
+            // Clear cache
+            userCartCache = { userId: user.uid, cart: [] };
+            
             updateCartBadge();
 
             // Show order confirmation
@@ -930,21 +938,29 @@ async function handleForgotPassword() {
     }
 // 🔥 FIXED CART EVENT LISTENERS
 function setupCartEventListeners() {
-    // Remove items - use event delegation for better performance
-    document.getElementById('cart-items').addEventListener('click', function(e) {
-        if (e.target.closest('.remove-item')) {
-            const button = e.target.closest('.remove-item');
-            const index = parseInt(button.dataset.index);
-            removeFromCart(index);
-        }
+    // Remove existing listeners to prevent duplicates
+    const cartItemsEl = document.getElementById('cart-items');
+    if (cartItemsEl) {
+        // Remove all existing event listeners by cloning
+        const newCartItemsEl = cartItemsEl.cloneNode(true);
+        cartItemsEl.parentNode.replaceChild(newCartItemsEl, cartItemsEl);
         
-        if (e.target.closest('.quantity-btn')) {
-            const button = e.target.closest('.quantity-btn');
-            const index = parseInt(button.dataset.index);
-            const action = button.dataset.action;
-            adjustQuantity(index, action);
-        }
-    });
+        // Add new event listener
+        newCartItemsEl.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-item')) {
+                const button = e.target.closest('.remove-item');
+                const index = parseInt(button.dataset.index);
+                removeFromCart(index);
+            }
+            
+            if (e.target.closest('.quantity-btn')) {
+                const button = e.target.closest('.quantity-btn');
+                const index = parseInt(button.dataset.index);
+                const action = button.dataset.action;
+                adjustQuantity(index, action);
+            }
+        });
+    }
 }
     // CART FUNCTIONS (unchanged - they use localStorage)
     function setupAddToCartListeners() {
@@ -1025,7 +1041,7 @@ async function addToCart(product, buttonElement) {
         });
 
         // Update cache
-        userCartCache = cart;
+        userCartCache = { userId: user.uid, cart: cart };
 
         // Update UI
         updateCartBadge();
@@ -1051,14 +1067,15 @@ async function addToCart(product, buttonElement) {
     }
 }
 async function getUserCart(userId) {
-    if (userCartCache) {
-        return userCartCache;
+    if (userCartCache && userCartCache.userId === userId) {
+        return userCartCache.cart;
     }
     
     const userDoc = await db.collection('users').doc(userId).get();
     const userData = userDoc.data();
-    userCartCache = userData.cart || [];
-    return userCartCache;
+    const cart = userData.cart || [];
+    userCartCache = { userId: userId, cart: cart };
+    return cart;
 }
 
 // 🔥 CLEAR CACHE ON USER CHANGE
@@ -1153,23 +1170,6 @@ async function renderCart() {
 }
 
 
-function setupCartEventListeners() {
-    // Remove items - use event delegation for better performance
-    document.getElementById('cart-items').addEventListener('click', function(e) {
-        if (e.target.closest('.remove-item')) {
-            const button = e.target.closest('.remove-item');
-            const index = parseInt(button.dataset.index);
-            removeFromCart(index);
-        }
-        
-        if (e.target.closest('.quantity-btn')) {
-            const button = e.target.closest('.quantity-btn');
-            const index = parseInt(button.dataset.index);
-            const action = button.dataset.action;
-            adjustQuantity(index, action);
-        }
-    });
-}
 
 async function removeFromCart(index) {
     const user = auth.currentUser;
@@ -1186,7 +1186,7 @@ async function removeFromCart(index) {
             });
             
             // Update cache
-            userCartCache = cart;
+            userCartCache = { userId: user.uid, cart: cart };
             
             await renderCart();
             updateCartBadge();
@@ -1223,7 +1223,7 @@ async function adjustQuantity(index, action) {
             });
             
             // Update cache
-            userCartCache = cart;
+            userCartCache = { userId: user.uid, cart: cart };
             
             await renderCart();
             updateCartBadge();
@@ -1497,7 +1497,12 @@ function setupChat() {
 function setupChatButton() {
     const chatBtn = document.getElementById('floating-chat-btn');
     if (chatBtn) {
-        chatBtn.addEventListener('click', openChatPopup);
+        // Remove existing event listeners
+        const newChatBtn = chatBtn.cloneNode(true);
+        chatBtn.parentNode.replaceChild(newChatBtn, chatBtn);
+        
+        // Add new event listener
+        newChatBtn.addEventListener('click', openChatPopup);
         console.log('Chat button setup successful');
     } else {
         console.error('Chat button not found!');
@@ -1512,16 +1517,24 @@ function openChatPopup() {
         return;
     }
     
-    // Open chatManager.html as a popup window (like your contact popup)
-    const popup = window.open('chatManager.html', 'chatPopup', 
-        'width=400,height=600,resizable=yes,scrollbars=yes,location=no,menubar=no,toolbar=no');
+    // Check if mobile
+    const isMobile = window.innerWidth <= 768;
     
-    if (popup) {
-        popup.focus();
-    } else {
-        // Fallback to new tab if popup blocked
-        alert('Popup blocked! Opening chat in new tab.');
+    if (isMobile) {
+        // On mobile, open in new tab
         window.open('chatManager.html', '_blank');
+    } else {
+        // On desktop, open popup
+        const popup = window.open('chatManager.html', 'chatPopup', 
+            'width=420,height=720,resizable=yes,scrollbars=yes,location=no,menubar=no,toolbar=no');
+        
+        if (popup) {
+            popup.focus();
+        } else {
+            // Fallback to new tab if popup blocked
+            alert('Popup blocked! Opening chat in new tab.');
+            window.open('chatManager.html', '_blank');
+        }
     }
 }
 
