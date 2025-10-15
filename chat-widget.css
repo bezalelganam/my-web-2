@@ -1,0 +1,73 @@
+
+/* Enhanced chat widget CSS with mobile optimization */
+#assistant-chat-widget-btn {
+    cursor: pointer;
+    position: fixed;
+    right: 16px;
+    bottom: 80px;
+    z-index: 9999;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 6px 18px rgba(0,0,0,.3);
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#assistant-chat-widget-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+}
+
+#chat-notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #10b981;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    #assistant-chat-widget-btn {
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 24px !important;
+        right: 20px;
+        bottom: 100px;
+    }
+    
+    #chat-notification-badge {
+        width: 22px;
+        height: 22px;
+        font-size: 13px;
+    }
+}
+
+/* Ensure widget doesn't interfere with other elements */
+#assistant-chat-widget-btn * {
+    pointer-events: none;
+}
+
+#assistant-chat-widget-btn {
+    pointer-events: auto;
+}

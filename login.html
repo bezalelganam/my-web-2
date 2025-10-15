@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | ELECTRIFY⚡</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body class="bg-black text-white">
+    <!-- Navigation -->
+    <nav class="py-6 px-4 md:px-12 flex justify-between items-center">
+        <div class="flex items-center">
+            <a href="index.html" class="text-2xl font-bold tracking-tight">
+                <span class="text-red-500">ELECTRIFY</span>
+                <span class="text-white">⚡</span>
+            </a>
+        </div>
+        <div class="flex items-center space-x-4">
+            <a href="index.html" class="text-white hover:text-red-500">Home</a>
+        </div>
+    </nav>
+
+    <!-- Login Section -->
+    <section class="flex items-center justify-center min-h-screen py-12 px-4">
+        <div class="max-w-md w-full bg-gray-900 rounded-lg p-8 shadow-lg">
+            <h1 class="text-3xl font-bold mb-8 text-center">Welcome Back</h1>
+            
+            <!-- Google Sign In -->
+            <div id="g_id_onload"
+                data-client_id="YOUR_GOOGLE_CLIENT_ID"
+                data-context="signin"
+                data-ux_mode="popup"
+                data-login_uri="/auth/google/callback"
+                data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin mb-6 w-full"
+                data-type="standard"
+                data-shape="rectangular"
+                data-theme="filled_black"
+                data-text="signin_with"
+                data-size="large"
+                data-logo_alignment="left">
+            </div>
+            
+            <div class="flex items-center mb-6">
+                <div class="flex-grow border-t border-gray-700"></div>
+                <span class="mx-4 text-gray-400">or</span>
+                <div class="flex-grow border-t border-gray-700"></div>
+            </div>
+            
+            <!-- Email Login Form -->
+            <form id="login-form" class="space-y-6">
+                <div>
+                    <label for="email" class="block text-gray-400 mb-2">Email</label>
+                    <input type="email" id="email" class="w-full bg-gray-800 text-white p-3 rounded focus:outline-none focus:ring-1 focus:ring-red-500" required>
+                </div>
+                <div>
+                    <label for="password" class="block text-gray-400 mb-2">Password</label>
+                    <input type="password" id="password" class="w-full bg-gray-800 text-white p-3 rounded focus:outline-none focus:ring-1 focus:ring-red-500" required>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="remember" class="mr-2">
+                        <label for="remember" class="text-gray-400">Remember me</label>
+                    </div>
+                    <a href="#" class="text-red-500 hover:text-red-400 text-sm">Forgot password?</a>
+                </div>
+                <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded font-medium transition">
+                    Sign In
+                </button>
+            </form>
+            <div class="mt-6 text-center">
+                <p class="text-gray-400">Don't have an account? <a href="signup.html" class="text-red-500 hover:text-red-400">Sign up</a></p>
+            </div>
+</div>
+    </section>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        feather.replace();
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Login form handling
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            handleLogin();
+        });
+
+        async function handleLogin() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Check if admin
+                if (email === "admin@wanttowin.com") {
+                    // Make sure user has admin role
+                    const userDoc = await db.collection('users').doc(user.uid).get();
+                    if (userDoc.exists && userDoc.data().role === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else {
+                        alert('Admin access required');
+                        await auth.signOut();
+                    }
+                } else {
+                    window.location.href = 'index.html';
+                }
+
+            } catch (error) {
+                console.error('Login error:', error);
+                
+                // User-friendly error messages
+                if (error.code === 'auth/user-not-found') {
+                    alert('❌ No account found with this email.');
+                } else if (error.code === 'auth/wrong-password') {
+                    alert('❌ Incorrect password. Please try again.');
+                } else if (error.code === 'auth/invalid-email') {
+                    alert('❌ Please enter a valid email address.');
+                } else {
+                    alert('❌ Login failed: ' + error.message);
+                }
+            }
+        }
+
+        // Handle Google login callback
+        function handleCredentialResponse(response) {
+            // Decode JWT response
+            const responsePayload = JSON.parse(atob(response.credential.split('.')[1]));
+            
+            // For demo purposes, redirect to main site
+            window.location.href = 'index.html';
+        }
+        
+        // Add Google callback to window
+        window.handleCredentialResponse = handleCredentialResponse;
+    });
+</script>
+
+<!-- Mobile fixed cart button (added by assistant) -->
+<div id="mobile-cart-btn" class="mobile-cart hidden fixed bottom-4 right-4 z-50">
+  <a href="cart.html" class="inline-flex items-center px-4 py-3 rounded-full bg-red-600 text-white shadow-lg">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M16 11V3a1 1 0 00-1-1H5a1 1 0 00-1 1v8H2v2h1.2l1.6 6h8.4l1.6-6H18v-2h-2zM6 4h8v7H6V4z"/></svg>
+    <span id="mobile-cart-count" class="font-medium">0</span>
+  </a>
+</div>
+
+<script>
+  (function(){
+    function updateCartBadge(){
+      try {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const count = cart.reduce((s,i)=>s+(i.quantity||1),0);
+        const el = document.getElementById('mobile-cart-count');
+        if(el) el.textContent = count;
+        const btn = document.getElementById('mobile-cart-btn');
+        if(btn){
+          if(count>0) btn.classList.remove('hidden');
+          else btn.classList.add('hidden');
+        }
+      } catch(e){ console.error(e); }
+    }
+    updateCartBadge();
+    window.addEventListener('storage', updateCartBadge);
+    document.addEventListener('DOMContentLoaded', updateCartBadge);
+  })();
+</script>
+<!-- End mobile cart button -->
+
+<!-- Assistant: chat widget (loads a small floating button) -->
+<link rel="stylesheet" href="assets/chat-widget.css">
+<script src="assets/chat-widget.js" defer></script>
+<!-- End assistant chat widget -->
+
+</body>
+</html>

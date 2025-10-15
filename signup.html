@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | ELECTRIFY⚡</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body class="bg-black text-white">
+    <!-- Navigation -->
+    <nav class="py-6 px-4 md:px-12 flex justify-between items-center">
+        <div class="flex items-center">
+            <a href="index.html" class="text-2xl font-bold tracking-tight">
+                <span class="text-red-500">ELECTRIFY</span>
+                <span class="text-white">⚡</span>
+            </a>
+        </div>
+        <div class="flex items-center space-x-4">
+            <a href="login.html" class="text-white hover:text-red-500">Login</a>
+        </div>
+    </nav>
+
+    <!-- Signup Section -->
+    <section class="flex items-center justify-center min-h-screen py-12 px-4">
+        <div class="max-w-md w-full bg-gray-900 rounded-lg p-8 shadow-lg">
+            <h1 class="text-3xl font-bold mb-8 text-center">Create Account</h1>
+            
+            <!-- Google Sign Up -->
+            <div id="g_id_onload"
+                data-client_id="YOUR_GOOGLE_CLIENT_ID"
+                data-context="signup"
+                data-ux_mode="popup"
+                data-login_uri="/auth/google/callback"
+                data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin mb-6 w-full"
+                data-type="standard"
+                data-shape="rectangular"
+                data-theme="filled_black"
+                data-text="signup_with"
+                data-size="large"
+                data-logo_alignment="left">
+            </div>
+            
+            <div class="flex items-center mb-6">
+                <div class="flex-grow border-t border-gray-700"></div>
+                <span class="mx-4 text-gray-400">or</span>
+                <div class="flex-grow border-t border-gray-700"></div>
+            </div>
+            
+            <!-- Email Signup Form -->
+            <form id="signup-form" class="space-y-6">
+                <div>
+                    <label for="name" class="block text-gray-400 mb-2">Full Name</label>
+                    <input type="text" id="name" class="w-full bg-gray-800 text-white p-3 rounded focus:outline-none focus:ring-1 focus:ring-red-500" required>
+                </div>
+                <div>
+                    <label for="email" class="block text-gray-400 mb-2">Email</label>
+                    <input type="email" id="email" class="w-full bg-gray-800 text-white p-3 rounded focus:outline-none focus:ring-1 focus:ring-red-500" required>
+                </div>
+                <div>
+                    <label for="password" class="block text-gray-400 mb-2">Password</label>
+                    <input type="password" id="password" class="w-full bg-gray-800 text-white p-3 rounded focus:outline-none focus:ring-1 focus:ring-red-500" required>
+                </div>
+                <div>
+                    <label for="confirm-password" class="block text-gray-400 mb-2">Confirm Password</label>
+                    <input type="password" id="confirm-password" class="w-full bg-gray-800 text-white p-3 rounded focus:outline-none focus:ring-1 focus:ring-red-500" required>
+                </div>
+                <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded font-medium transition">
+                    Create Account
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <p class="text-gray-400">Already have an account? <a href="login.html" class="text-red-500 hover:text-red-400">Login</a></p>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            
+            // Initialize users storage if not exists
+            if (!localStorage.getItem('users')) {
+                localStorage.setItem('users', JSON.stringify([]));
+            }
+
+            // Signup form handling
+            document.getElementById('signup-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('name').value;
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+                const confirmPassword = document.getElementById('confirm-password').value;
+                
+                // Validate passwords match
+                if (password !== confirmPassword) {
+                    alert('Passwords do not match!');
+                    return;
+                }
+                
+                // Get existing users
+                const users = JSON.parse(localStorage.getItem('users'));
+                
+                // Check if user already exists
+                if (users.some(user => user.email === email)) {
+                    alert('This email is already registered!');
+                    return;
+                }
+                
+                // Add new user
+                users.push({
+                    name: name,
+                    email: email,
+                    password: password
+                });
+                
+                // Save to localStorage
+                localStorage.setItem('users', JSON.stringify(users));
+                
+                // Redirect to login
+                alert('Account created successfully! Please login.');
+                window.location.href = 'login.html';
+            });
+            
+            // Handle Google signup callback
+            function handleCredentialResponse(response) {
+                // Decode JWT response
+                const responsePayload = JSON.parse(atob(response.credential.split('.')[1]));
+                
+                // Get existing users
+                const users = JSON.parse(localStorage.getItem('users'));
+                
+                // Check if user already exists
+                if (!users.some(user => user.email === responsePayload.email)) {
+                    // Add new user
+                    users.push({
+                        name: responsePayload.name,
+                        email: responsePayload.email,
+                        googleId: responsePayload.sub
+                    });
+                    
+                    // Save to localStorage
+                    localStorage.setItem('users', JSON.stringify(users));
+                }
+                
+                localStorage.setItem('isAdmin', 'false');
+                localStorage.setItem('userEmail', responsePayload.email);
+                localStorage.setItem('userName', responsePayload.name);
+                localStorage.setItem('userPicture', responsePayload.picture);
+                
+                window.location.href = 'index.html';
+            }
+            
+            // Add Google callback to window
+            window.handleCredentialResponse = handleCredentialResponse;
+        });
+    </script>
+
+<!-- Mobile fixed cart button (added by assistant) -->
+<div id="mobile-cart-btn" class="mobile-cart hidden fixed bottom-4 right-4 z-50">
+  <a href="cart.html" class="inline-flex items-center px-4 py-3 rounded-full bg-red-600 text-white shadow-lg">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M16 11V3a1 1 0 00-1-1H5a1 1 0 00-1 1v8H2v2h1.2l1.6 6h8.4l1.6-6H18v-2h-2zM6 4h8v7H6V4z"/></svg>
+    <span id="mobile-cart-count" class="font-medium">0</span>
+  </a>
+</div>
+
+<script>
+  (function(){
+    function updateCartBadge(){
+      try {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const count = cart.reduce((s,i)=>s+(i.quantity||1),0);
+        const el = document.getElementById('mobile-cart-count');
+        if(el) el.textContent = count;
+        const btn = document.getElementById('mobile-cart-btn');
+        if(btn){
+          if(count>0) btn.classList.remove('hidden');
+          else btn.classList.add('hidden');
+        }
+      } catch(e){ console.error(e); }
+    }
+    updateCartBadge();
+    window.addEventListener('storage', updateCartBadge);
+    document.addEventListener('DOMContentLoaded', updateCartBadge);
+  })();
+</script>
+<!-- End mobile cart button -->
+
+<!-- Assistant: chat widget (loads a small floating button) -->
+<link rel="stylesheet" href="assets/chat-widget.css">
+<script src="assets/chat-widget.js" defer></script>
+<!-- End assistant chat widget -->
+
+</body>
+</html>

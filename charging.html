@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Charging | Electrify</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+            background-color: #000;
+            color: #fff;
+        }
+        .nav-link {
+            position: relative;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: white;
+            transition: width 0.3s;
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        .active-tab {
+            color: #ef4444;
+        }
+        .active-tab::after {
+            width: 100%;
+            background: #ef4444;
+        }
+        .charging-card {
+            transition: all 0.3s ease;
+        }
+        .charging-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="py-6 px-4 md:px-12 flex justify-between items-center">
+        <div class="flex items-center">
+            <a href="index.html" class="text-2xl font-bold tracking-tight">
+                <span class="text-red-500">ELECTRIFY</span>
+                <span class="text-white">⚡</span>
+            </a>
+        </div>
+        <div class="hidden md:flex space-x-8">
+            <a href="index.html#models" class="nav-link text-white font-medium">Models</a>
+            <a href="energy.html" class="nav-link text-white font-medium">Energy</a>
+            <a href="charging.html" class="nav-link text-white font-medium active-tab">Charging</a>
+            <a href="discover.html" class="nav-link text-white font-medium">Discover</a>
+            <a href="shop.html" class="nav-link text-white font-medium">Shop</a>
+        </div>
+        <div class="flex items-center space-x-4">
+            <button class="md:hidden text-white">
+                <i data-feather="menu"></i>
+            </button>
+            <button class="hidden md:block bg-white text-black px-4 py-2 rounded font-medium hover:bg-opacity-90 transition">
+                Order Now
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="py-20 px-4 md:px-12 bg-gradient-to-b from-gray-900 to-black">
+        <div class="max-w-6xl mx-auto text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-6">Charging Solutions</h1>
+            <p class="text-xl text-gray-400 max-w-3xl mx-auto">
+                Charge at home, at work, or on the road with our global charging network.
+            </p>
+        </div>
+    </section>
+
+    <!-- Charging Options Section -->
+    <section class="py-16 px-4 md:px-12">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-3xl font-bold mb-12 text-center">Choose Your Charging Solution</h2>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Home Charging -->
+                <div class="charging-card bg-gray-900 rounded-lg overflow-hidden">
+                    <img src="http://static.photos/technology/1024x576/30" alt="Home Charging" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-2xl font-bold mb-2">Home Charging</h3>
+                        <p class="text-gray-400 mb-4">
+                            Wake up to a full charge every morning with our home charging solutions.
+                        </p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xl font-medium">From $500</span>
+                            <button class="text-red-500 hover:text-red-400 font-medium" onclick="openOrderModal('Home Charging', 500)">Order Now</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Supercharging -->
+                <div class="charging-card bg-gray-900 rounded-lg overflow-hidden">
+                    <img src="http://static.photos/technology/1024x576/31" alt="Supercharging" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-2xl font-bold mb-2">Supercharging</h3>
+                        <p class="text-gray-400 mb-4">
+                            Travel anywhere with access to our global Supercharger network.
+                        </p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xl font-medium">Pay per use</span>
+                            <button class="text-red-500 hover:text-red-400 font-medium" onclick="alert('Find Superchargers on the map')">Find Locations</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Destination Charging -->
+                <div class="charging-card bg-gray-900 rounded-lg overflow-hidden">
+                    <img src="http://static.photos/technology/1024x576/32" alt="Destination Charging" class="w-full h-48 object-cover">
+                    <div class="p-6">
+                        <h3 class="text-2xl font-bold mb-2">Destination Charging</h3>
+                        <p class="text-gray-400 mb-4">
+                            Charge while you shop, dine, or stay overnight at thousands of locations.
+                        </p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-xl font-medium">Often free</span>
+                            <button class="text-red-500 hover:text-red-400 font-medium" onclick="alert('Find destination chargers on the map')">Find Locations</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Map Section -->
+    <section class="py-16 px-4 md:px-12 bg-gray-900">
+        <div class="max-w-6xl mx-auto">
+            <h2 class="text-3xl font-bold mb-12 text-center">Find Charging Locations</h2>
+            
+            <div class="bg-black rounded-lg overflow-hidden h-96 relative">
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="text-center">
+                        <i data-feather="map" class="w-16 h-16 text-red-500 mx-auto mb-4"></i>
+                        <h3 class="text-2xl font-bold mb-2">Interactive Charging Map</h3>
+                        <p class="text-gray-400 mb-4">Search for charging locations near you</p>
+                        <button class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded font-medium transition">
+                            View Map
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Order Modal -->
+    <div id="order-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-900 rounded-lg p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold" id="order-model-name">Order</h3>
+                <button onclick="closeOrderModal()" class="text-gray-400 hover:text-white">
+                    <i data-feather="x"></i>
+                </button>
+            </div>
+            <div class="mb-6">
+                <span class="text-gray-400">Price:</span>
+                <span class="text-xl font-bold block" id="order-model-price">$0</span>
+            </div>
+            <div class="mb-6">
+                <label class="block text-gray-400 mb-2">Installation Type</label>
+                <select class="w-full bg-gray-800 text-white p-2 rounded focus:outline-none focus:ring-1 focus:ring-red-500">
+                    <option>Standard Installation</option>
+                    <option>Premium Installation</option>
+                </select>
+            </div>
+            <button class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded font-medium transition">
+                Schedule Installation
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-black py-16 px-4 md:px-12 border-t border-gray-800">
+        <div class="max-w-6xl mx-auto grid md:grid-cols-4 gap-12">
+            <div>
+                <h3 class="text-xl font-bold mb-6">ELECTRIFY⚡</h3>
+                <p class="text-gray-400 mb-6">
+                    Accelerating the world's transition to sustainable energy.
+                </p>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-white"><i data-feather="twitter"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i data-feather="facebook"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i data-feather="instagram"></i></a>
+                    <a href="#" class="text-gray-400 hover:text-white"><i data-feather="youtube"></i></a>
+                </div>
+            </div>
+            <div>
+                <h4 class="font-bold mb-6">Models</h4>
+                <ul class="space-y-3">
+                    <li><a href="index.html#models" class="text-gray-400 hover:text-white">Model S</a></li>
+                    <li><a href="index.html#models" class="text-gray-400 hover:text-white">Model 3</a></li>
+                    <li><a href="index.html#models" class="text-gray-400 hover:text-white">Model X</a></li>
+                    <li><a href="index.html#models" class="text-gray-400 hover:text-white">Model Y</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold mb-6">Company</h4>
+                <ul class="space-y-3">
+                    <li><a href="#" class="text-gray-400 hover:text-white">About</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white">Careers</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white">Investors</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white">Contact</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-bold mb-6">Support</h4>
+                <ul class="space-y-3">
+                    <li><a href="#" class="text-gray-400 hover:text-white">Customer Support</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white">Owner's Manual</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white">Warranty</a></li>
+                    <li><a href="#" class="text-gray-400 hover:text-white">Roadside Assistance</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="max-w-6xl mx-auto mt-16 pt-8 border-t border-gray-800 text-center text-gray-500">
+            <p>© 2023 Electrify. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Admin Chat Button -->
+    <button id="admin-chat-btn" class="fixed bottom-6 right-6 bg-red-500 text-white p-3 rounded-full shadow-lg hover:bg-red-600 transition">
+        <i data-feather="message-circle"></i>
+    </button>
+
+    <script>
+        // Initialize Feather Icons
+        feather.replace();
+
+        // Order modal functionality
+        function openOrderModal(itemName, price) {
+            document.getElementById('order-model-name').textContent = `Order ${itemName}`;
+            document.getElementById('order-model-price').textContent = `$${price.toLocaleString()}`;
+            document.getElementById('order-modal').classList.remove('hidden');
+            feather.replace();
+        }
+
+        function closeOrderModal() {
+            document.getElementById('order-modal').classList.add('hidden');
+        }
+
+        // Chat functionality
+        document.getElementById('admin-chat-btn').addEventListener('click', () => {
+            const isAdmin = confirm("Are you an admin? (Demo only - click OK)");
+            alert(isAdmin ? "Admin chat would open here" : "Customer support chat would open here");
+        });
+    </script>
+
+<!-- Mobile fixed cart button (added by assistant) -->
+<div id="mobile-cart-btn" class="mobile-cart hidden fixed bottom-4 right-4 z-50">
+  <a href="cart.html" class="inline-flex items-center px-4 py-3 rounded-full bg-red-600 text-white shadow-lg">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M16 11V3a1 1 0 00-1-1H5a1 1 0 00-1 1v8H2v2h1.2l1.6 6h8.4l1.6-6H18v-2h-2zM6 4h8v7H6V4z"/></svg>
+    <span id="mobile-cart-count" class="font-medium">0</span>
+  </a>
+</div>
+
+<script>
+  (function(){
+    function updateCartBadge(){
+      try {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const count = cart.reduce((s,i)=>s+(i.quantity||1),0);
+        const el = document.getElementById('mobile-cart-count');
+        if(el) el.textContent = count;
+        const btn = document.getElementById('mobile-cart-btn');
+        if(btn){
+          if(count>0) btn.classList.remove('hidden');
+          else btn.classList.add('hidden');
+        }
+      } catch(e){ console.error(e); }
+    }
+    updateCartBadge();
+    window.addEventListener('storage', updateCartBadge);
+    document.addEventListener('DOMContentLoaded', updateCartBadge);
+  })();
+</script>
+<!-- End mobile cart button -->
+
+<!-- Assistant: chat widget (loads a small floating button) -->
+<link rel="stylesheet" href="assets/chat-widget.css">
+<script src="assets/chat-widget.js" defer></script>
+<!-- End assistant chat widget -->
+
+</body>
+</html>

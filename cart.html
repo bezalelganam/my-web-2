@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Cart | ELECTRIFY⚡</title>
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body class="bg-black text-white">
+    <!-- Navigation -->
+    <nav class="py-6 px-4 md:px-12 flex justify-between items-center border-b border-gray-800">
+        <div class="flex items-center">
+            <a href="index.html" class="text-2xl font-bold tracking-tight">
+                <span class="text-red-500">ELECTRIFY</span>
+                <span class="text-white">⚡</span>
+            </a>
+        </div>
+        <div class="flex items-center space-x-4">
+            <a href="index.html#shop" class="text-white hover:text-red-500">Continue Shopping</a>
+        </div>
+    </nav>
+
+    <!-- Cart Section -->
+    <section class="py-12 px-4 md:px-12">
+        <div class="max-w-6xl mx-auto">
+            <h1 class="text-3xl md:text-4xl font-bold mb-8">Your Cart</h1>
+            
+            <div id="cart-items" class="mb-8">
+                <!-- Cart items will be dynamically inserted here -->
+                <div id="empty-cart-message" class="text-center py-12">
+                    <i data-feather="shopping-cart" class="w-12 h-12 mx-auto text-gray-500 mb-4"></i>
+                    <p class="text-xl text-gray-400">Your cart is empty</p>
+                    <a href="index.html#shop" class="text-red-500 hover:text-red-400 mt-4 inline-block">Start Shopping</a>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-lg p-6">
+                <div class="flex justify-between mb-4">
+                    <span class="text-gray-400">Subtotal</span>
+                    <span id="subtotal" class="font-medium">$0</span>
+                </div>
+                <div class="flex justify-between mb-4">
+                    <span class="text-gray-400">Shipping</span>
+                    <span class="font-medium">Free</span>
+                </div>
+                <div class="flex justify-between mb-6 border-t border-gray-800 pt-4">
+                    <span class="text-lg">Total</span>
+                    <span id="total" class="text-xl font-bold">$0</span>
+                </div>
+                <button id="checkout-btn" class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded font-medium transition">
+                    Proceed to Checkout
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 rounded-lg max-w-md w-full p-6 relative">
+            <button id="close-payment-modal" class="absolute top-4 right-4 text-gray-400 hover:text-white">
+                <i data-feather="x"></i>
+            </button>
+            <h3 class="text-2xl font-bold mb-6">Payment Options</h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between bg-gray-800 p-4 rounded-lg cursor-pointer hover:bg-gray-700 payment-option" data-method="credit">
+                    <div class="flex items-center">
+                        <i data-feather="credit-card" class="mr-3"></i>
+                        <span>Credit/Debit Card</span>
+                    </div>
+                    <i data-feather="chevron-right"></i>
+                </div>
+                <div class="flex items-center justify-between bg-gray-800 p-4 rounded-lg cursor-pointer hover:bg-gray-700 payment-option" data-method="paypal">
+                    <div class="flex items-center">
+                        <i data-feather="dollar-sign" class="mr-3"></i>
+                        <span>PayPal</span>
+                    </div>
+                    <i data-feather="chevron-right"></i>
+                </div>
+                <div class="flex items-center justify-between bg-gray-800 p-4 rounded-lg cursor-pointer hover:bg-gray-700 payment-option" data-method="crypto">
+                    <div class="flex items-center">
+                        <i data-feather="bitcoin" class="mr-3"></i>
+                        <span>Cryptocurrency</span>
+                    </div>
+                    <i data-feather="chevron-right"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBxzYFV5N2Mxl5K-OdKv-mXS8eCaDd8EGc",
+            authDomain: "website-9f7c2.firebaseapp.com",
+            projectId: "website-9f7c2",
+            storageBucket: "website-9f7c2.firebasestorage.app",
+            messagingSenderId: "857090113341",
+            appId: "1:857090113341:web:6ae0b6ccd074482b35cf54",
+            measurementId: "G-PRLNDCHKS0"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        let userCartCache = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            
+            // Check authentication
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    loadUserCart();
+                } else {
+                    // Redirect to login
+                    window.location.href = 'index.html#login';
+                }
+            });
+        });
+
+        async function loadUserCart() {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            try {
+                const cart = await getUserCart(user.uid);
+                renderCart(cart);
+            } catch (error) {
+                console.error('Error loading cart:', error);
+            }
+        }
+
+        async function getUserCart(userId) {
+            if (userCartCache) {
+                return userCartCache;
+            }
+            
+            const userDoc = await db.collection('users').doc(userId).get();
+            const userData = userDoc.data();
+            userCartCache = userData.cart || [];
+            return userCartCache;
+        }
+
+        function renderCart(cart) {
+            const cartItemsEl = document.getElementById('cart-items');
+            const emptyCartMessage = document.getElementById('empty-cart-message');
+            const subtotalEl = document.getElementById('subtotal');
+            const totalEl = document.getElementById('total');
+            const checkoutBtn = document.getElementById('checkout-btn');
+
+            if (cart.length === 0) {
+                emptyCartMessage.classList.remove('hidden');
+                cartItemsEl.innerHTML = '';
+                cartItemsEl.appendChild(emptyCartMessage);
+                checkoutBtn.disabled = true;
+                checkoutBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                return;
+            }
+
+            emptyCartMessage.classList.add('hidden');
+            checkoutBtn.disabled = false;
+            checkoutBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            
+            let html = '';
+            let subtotal = 0;
+            
+            cart.forEach((item, index) => {
+                const itemTotal = parseFloat(item.price) * (item.quantity || 1);
+                subtotal += itemTotal;
+                html += `
+                    <div class="flex items-center justify-between py-4 border-b border-gray-800">
+                        <div class="flex items-center">
+                            <img src="${item.image}" alt="${item.name}" class="w-16 h-16 object-cover rounded">
+                            <div class="ml-4">
+                                <h3 class="font-medium">${item.name}</h3>
+                                <p class="text-gray-400">₪${item.price}</p>
+                                <div class="flex items-center mt-2">
+                                    <button class="text-gray-400 hover:text-white quantity-btn" data-index="${index}" data-action="decrease">-</button>
+                                    <span class="mx-2">${item.quantity || 1}</span>
+                                    <button class="text-gray-400 hover:text-white quantity-btn" data-index="${index}" data-action="increase">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="mr-4">₪${itemTotal.toFixed(2)}</span>
+                            <button class="text-red-500 hover:text-red-400 remove-item" data-index="${index}">
+                                <i data-feather="trash-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            cartItemsEl.innerHTML = html;
+            subtotalEl.textContent = `₪${subtotal.toFixed(2)}`;
+            totalEl.textContent = `₪${subtotal.toFixed(2)}`;
+            feather.replace();
+            
+            // Setup event listeners
+            setupCartEventListeners();
+        }
+
+        function setupCartEventListeners() {
+            // Remove items
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-item')) {
+                    const index = parseInt(e.target.closest('.remove-item').dataset.index);
+                    removeFromCart(index);
+                }
+                
+                if (e.target.closest('.quantity-btn')) {
+                    const btn = e.target.closest('.quantity-btn');
+                    const index = parseInt(btn.dataset.index);
+                    const action = btn.dataset.action;
+                    adjustQuantity(index, action);
+                }
+            });
+
+            // Checkout button
+            document.getElementById('checkout-btn').addEventListener('click', handleCheckout);
+        }
+
+        async function removeFromCart(index) {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            try {
+                let cart = await getUserCart(user.uid);
+                
+                if (index >= 0 && index < cart.length) {
+                    cart.splice(index, 1);
+                    
+                    await db.collection('users').doc(user.uid).update({
+                        cart: cart
+                    });
+                    
+                    userCartCache = cart;
+                    renderCart(cart);
+                }
+            } catch (error) {
+                console.error('Error removing from cart:', error);
+            }
+        }
+
+        async function adjustQuantity(index, action) {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            try {
+                let cart = await getUserCart(user.uid);
+                
+                if (index >= 0 && index < cart.length) {
+                    const item = cart[index];
+                    item.quantity = item.quantity || 1;
+                    
+                    if (action === 'increase') {
+                        item.quantity++;
+                    } else if (action === 'decrease') {
+                        if (item.quantity > 1) {
+                            item.quantity--;
+                        } else {
+                            cart.splice(index, 1);
+                        }
+                    }
+                    
+                    await db.collection('users').doc(user.uid).update({
+                        cart: cart
+                    });
+                    
+                    userCartCache = cart;
+                    renderCart(cart);
+                }
+            } catch (error) {
+                console.error('Error adjusting quantity:', error);
+            }
+        }
+
+        async function handleCheckout() {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            try {
+                const cart = await getUserCart(user.uid);
+                
+                if (cart.length === 0) {
+                    alert('Your cart is empty!');
+                    return;
+                }
+
+                // Create order
+                const order = {
+                    userId: user.uid,
+                    userEmail: user.email,
+                    items: [...cart],
+                    total: cart.reduce((sum, item) => sum + (item.price * (item.quantity || 1)), 0),
+                    status: 'confirmed',
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                // Save order to Firestore
+                const orderRef = await db.collection('orders').add(order);
+                
+                // Clear cart
+                await db.collection('users').doc(user.uid).update({
+                    cart: []
+                });
+                
+                userCartCache = [];
+
+                // Show success message
+                alert(`Order confirmed! Order ID: ${orderRef.id}`);
+                
+                // Redirect to main page
+                window.location.href = 'index.html#shop';
+
+            } catch (error) {
+                console.error('Checkout error:', error);
+                alert('Error processing order: ' + error.message);
+            }
+        }
+
+    </script>
+
+<!-- Mobile fixed cart button (added by assistant) -->
+<div id="mobile-cart-btn" class="mobile-cart hidden fixed bottom-4 right-4 z-50">
+  <a href="cart.html" class="inline-flex items-center px-4 py-3 rounded-full bg-red-600 text-white shadow-lg">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M16 11V3a1 1 0 00-1-1H5a1 1 0 00-1 1v8H2v2h1.2l1.6 6h8.4l1.6-6H18v-2h-2zM6 4h8v7H6V4z"/></svg>
+    <span id="mobile-cart-count" class="font-medium">0</span>
+  </a>
+</div>
+
+<script>
+  (function(){
+    function updateCartBadge(){
+      try {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const count = cart.reduce((s,i)=>s+(i.quantity||1),0);
+        const el = document.getElementById('mobile-cart-count');
+        if(el) el.textContent = count;
+        const btn = document.getElementById('mobile-cart-btn');
+        if(btn){
+          if(count>0) btn.classList.remove('hidden');
+          else btn.classList.add('hidden');
+        }
+      } catch(e){ console.error(e); }
+    }
+    updateCartBadge();
+    window.addEventListener('storage', updateCartBadge);
+    document.addEventListener('DOMContentLoaded', updateCartBadge);
+  })();
+</script>
+<!-- End mobile cart button -->
+
+<!-- Assistant: chat widget (loads a small floating button) -->
+<link rel="stylesheet" href="assets/chat-widget.css">
+<script src="assets/chat-widget.js" defer></script>
+<!-- End assistant chat widget -->
+
+</body>
+</html>

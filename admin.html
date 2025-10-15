@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - WantToWin</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #000;
+            color: #fff;
+        }
+        
+        .sidebar {
+            transition: all 0.3s ease;
+        }
+        
+        .chat-message {
+            max-width: 80%;
+            padding: 8px 12px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .user-message {
+            background-color: #ef4444;
+            margin-left: auto;
+        }
+        
+        .admin-message {
+            background-color: #374151;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .stat-card {
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        /* Mobile optimizations for admin panel */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                position: fixed;
+                top: 0;
+                left: -100%;
+                height: 100vh;
+                z-index: 50;
+                transition: left 0.3s ease;
+            }
+            
+            .sidebar.open {
+                left: 0;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 1rem;
+            }
+            
+            .stat-card {
+                margin-bottom: 1rem;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .lg\\:grid-cols-3 {
+                grid-template-columns: 1fr;
+            }
+            
+            .lg\\:col-span-1,
+            .lg\\:col-span-2 {
+                grid-column: span 1;
+            }
+            
+            /* Mobile chat improvements */
+            .chat-message {
+                max-width: 90%;
+                padding: 12px 16px;
+                font-size: 16px;
+            }
+            
+            /* Mobile table improvements */
+            .overflow-x-auto {
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            table {
+                font-size: 14px;
+            }
+            
+            th, td {
+                padding: 8px 4px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900">
+    <!-- Login Screen -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-gray-800 rounded-lg p-8 shadow-lg">
+            <div class="text-center mb-8">
+                <h1 class="text-3xl font-bold">
+                    <span class="text-red-500">WantToWin</span> Admin
+                </h1>
+                <p class="text-gray-400 mt-2">Access the admin dashboard</p>
+            </div>
+            
+            <form id="admin-login-form" class="space-y-6">
+                <div>
+                    <label for="admin-email" class="block text-gray-400 mb-2">Admin Email</label>
+                    <input type="email" id="admin-email" 
+                           class="w-full bg-gray-700 text-white p-3 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
+                           value="admin@wanttowin.com"
+                           required>
+                </div>
+                <div>
+                    <label for="admin-password" class="block text-gray-400 mb-2">Password</label>
+                    <input type="password" id="admin-password" 
+                           class="w-full bg-gray-700 text-white p-3 rounded focus:outline-none focus:ring-2 focus:ring-red-500"
+                           value="admin123"
+                           required>
+                </div>
+                <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded font-medium transition">
+                    Login to Admin Panel
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center">
+                <p class="text-gray-400">Back to <a href="index.html" class="text-red-500 hover:text-red-400">Main Site</a></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" class="hidden min-h-screen">
+        <!-- Header -->
+        <header class="bg-gray-800 border-b border-gray-700 sticky top-0 z-40">
+            <div class="flex items-center justify-between p-4">
+                <div class="flex items-center space-x-6">
+                    <h1 class="text-xl font-bold">
+                        <span class="text-red-500">WantToWin</span> Admin
+                    </h1>
+                    <div class="flex space-x-4">
+                        <button data-tab="dashboard-tab" class="text-white hover:text-red-500 font-medium">Dashboard</button>
+                        <button data-tab="chat-tab" class="text-white hover:text-red-500 font-medium">Live Chat</button>
+                        <button data-tab="orders-tab" class="text-white hover:text-red-500 font-medium">Orders</button>
+                        <button data-tab="users-tab" class="text-white hover:text-red-500 font-medium">Users</button>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span id="admin-email-display" class="text-sm text-gray-300">admin@wanttowin.com</span>
+                    <button id="logout-btn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded text-sm">
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="p-4 md:p-8">
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content active fade-in">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold">Dashboard Overview</h2>
+                    <p class="text-gray-400">Welcome to your admin dashboard</p>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="stat-card bg-gray-800 rounded-lg p-6 shadow-lg">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-red-500 bg-opacity-20 text-red-500 mr-4">
+                                <i data-feather="shopping-cart"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-400 text-sm">Total Orders</p>
+                                <h3 id="total-orders" class="text-2xl font-bold">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card bg-gray-800 rounded-lg p-6 shadow-lg">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-blue-500 bg-opacity-20 text-blue-500 mr-4">
+                                <i data-feather="dollar-sign"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-400 text-sm">Total Revenue</p>
+                                <h3 id="total-revenue" class="text-2xl font-bold">₪0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card bg-gray-800 rounded-lg p-6 shadow-lg">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-green-500 bg-opacity-20 text-green-500 mr-4">
+                                <i data-feather="users"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-400 text-sm">Total Users</p>
+                                <h3 id="total-users" class="text-2xl font-bold">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card bg-gray-800 rounded-lg p-6 shadow-lg">
+                        <div class="flex items-center">
+                            <div class="p-3 rounded-full bg-yellow-500 bg-opacity-20 text-yellow-500 mr-4">
+                                <i data-feather="package"></i>
+                            </div>
+                            <div>
+                                <p class="text-gray-400 text-sm">Active Chats</p>
+                                <h3 id="active-chats" class="text-2xl font-bold">0</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Orders -->
+                <div class="bg-gray-800 rounded-lg p-6 shadow-lg mb-8">
+                    <h3 class="text-lg font-bold mb-4">Recent Orders</h3>
+                    <div id="recent-orders" class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-400">
+                            <thead class="text-xs uppercase bg-gray-700 text-gray-400">
+                                <tr>
+                                    <th class="px-4 py-3">Order ID</th>
+                                    <th class="px-4 py-3">Customer</th>
+                                    <th class="px-4 py-3">Date</th>
+                                    <th class="px-4 py-3">Amount</th>
+                                    <th class="px-4 py-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-orders-body">
+                                <!-- Orders will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Live Chat Tab -->
+            <div id="chat-tab" class="tab-content hidden fade-in">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold">Live Chat Support</h2>
+                    <p class="text-gray-400">Manage customer conversations</p>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Chat List -->
+                    <div class="lg:col-span-1 bg-gray-800 rounded-lg p-6 shadow-lg">
+                        <h3 class="text-lg font-bold mb-4">Active Conversations</h3>
+                        <div id="chat-list" class="space-y-2 max-h-96 overflow-y-auto">
+                            <!-- Chat list will be populated here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Chat Window -->
+                    <div class="lg:col-span-2 bg-gray-800 rounded-lg p-6 shadow-lg">
+                        <div id="no-chat-selected" class="text-center py-12">
+                            <i data-feather="message-circle" class="w-12 h-12 mx-auto text-gray-500 mb-4"></i>
+                            <p class="text-xl text-gray-400">Select a conversation</p>
+                            <p class="text-gray-500 text-sm mt-2">Choose a user from the list to start chatting</p>
+                        </div>
+                        
+                        <div id="chat-window" class="hidden">
+                            <div class="flex justify-between items-center mb-4 pb-4 border-b border-gray-700">
+                                <div>
+                                    <h3 id="chat-user-name" class="font-bold"></h3>
+                                    <p id="chat-user-email" class="text-gray-400 text-sm"></p>
+                                </div>
+                                <button id="close-chat" class="text-gray-400 hover:text-white">
+                                    <i data-feather="x"></i>
+                                </button>
+                            </div>
+                            
+                            <div id="chat-messages" class="h-96 overflow-y-auto mb-4 space-y-2 p-2">
+                                <!-- Messages will be populated here -->
+                            </div>
+                            
+                            <div class="flex space-x-2">
+                                <input type="text" id="chat-input" 
+                                       class="flex-1 bg-gray-700 text-white p-3 rounded focus:outline-none focus:ring-2 focus:ring-red-500" 
+                                       placeholder="Type your message..." maxlength="500">
+                                <button id="send-message" class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded font-medium">
+                                    Send
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Orders Tab -->
+            <div id="orders-tab" class="tab-content hidden fade-in">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold">Order Management</h2>
+                    <p class="text-gray-400">Manage all customer orders</p>
+                </div>
+                
+                <div class="bg-gray-800 rounded-lg p-6 shadow-lg">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-400">
+                            <thead class="text-xs uppercase bg-gray-700 text-gray-400">
+                                <tr>
+                                    <th class="px-4 py-3">Order ID</th>
+                                    <th class="px-4 py-3">Customer</th>
+                                    <th class="px-4 py-3">Date</th>
+                                    <th class="px-4 py-3">Items</th>
+                                    <th class="px-4 py-3">Amount</th>
+                                    <th class="px-4 py-3">Status</th>
+                                    <th class="px-4 py-3">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body">
+                                <!-- Orders will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Users Tab -->
+            <div id="users-tab" class="tab-content hidden fade-in">
+                <div class="mb-8">
+                    <h2 class="text-2xl font-bold">User Management</h2>
+                    <p class="text-gray-400">Manage registered users</p>
+                </div>
+                
+                <div class="bg-gray-800 rounded-lg p-6 shadow-lg">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left text-gray-400">
+                            <thead class="text-xs uppercase bg-gray-700 text-gray-400">
+                                <tr>
+                                    <th class="px-4 py-3">User ID</th>
+                                    <th class="px-4 py-3">Name</th>
+                                    <th class="px-4 py-3">Email</th>
+                                    <th class="px-4 py-3">Join Date</th>
+                                    <th class="px-4 py-3">Orders</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <!-- Users will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBxzYFV5N2Mxl5K-OdKv-mXS8eCaDd8EGc",
+            authDomain: "website-9f7c2.firebaseapp.com",
+            projectId: "website-9f7c2",
+            storageBucket: "website-9f7c2.firebasestorage.app",
+            messagingSenderId: "857090113341",
+            appId: "1:857090113341:web:6ae0b6ccd074482b35cf54",
+            measurementId: "G-PRLNDCHKS0"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Current chat state
+        let currentChatUserId = null;
+        let chatUnsubscribe = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            feather.replace();
+            setupEventListeners();
+            checkAdminAuth();
+        });
+
+        function setupEventListeners() {
+            // Admin login
+            document.getElementById('admin-login-form').addEventListener('submit', handleAdminLogin);
+            
+            // Logout
+            document.getElementById('logout-btn').addEventListener('click', handleAdminLogout);
+            
+            // Chat
+            document.getElementById('send-message').addEventListener('click', sendMessage);
+            document.getElementById('chat-input').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            document.getElementById('close-chat').addEventListener('click', closeChat);
+            
+            // Navigation
+            document.querySelectorAll('[data-tab]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const tabName = this.dataset.tab;
+                    switchTab(tabName);
+                });
+            });
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.add('hidden');
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            const targetTab = document.getElementById(tabName);
+            if (targetTab) {
+                targetTab.classList.remove('hidden');
+                targetTab.classList.add('active');
+            }
+            
+            // Load tab-specific data
+            if (tabName === 'dashboard-tab') {
+                loadDashboardData();
+            } else if (tabName === 'chat-tab') {
+                loadChatList();
+            } else if (tabName === 'orders-tab') {
+                loadOrders();
+            } else if (tabName === 'users-tab') {
+                loadUsers();
+            }
+        }
+
+        async function checkAdminAuth() {
+            const user = auth.currentUser;
+            if (user && user.email === 'admin@wanttowin.com') {
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists && userDoc.data().role === 'admin') {
+                    showAdminDashboard();
+                    return;
+                }
+            }
+            
+            // Try to auto-login
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword('admin@wanttowin.com', 'admin123');
+                const user = userCredential.user;
+                showAdminDashboard();
+            } catch (error) {
+                console.log('Auto-login failed');
+            }
+        }
+
+        async function handleAdminLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            
+            try {
+                const userCredential = await auth.signInWithEmailAndPassword(email, password);
+                const user = userCredential.user;
+                
+                // Verify admin role
+                const userDoc = await db.collection('users').doc(user.uid).get();
+                if (userDoc.exists && userDoc.data().role === 'admin') {
+                    showAdminDashboard();
+                } else {
+                    alert('Access denied. Admin privileges required.');
+                    await auth.signOut();
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('Login failed: ' + error.message);
+            }
+        }
+
+        function handleAdminLogout() {
+            if (chatUnsubscribe) {
+                chatUnsubscribe();
+            }
+            auth.signOut();
+            document.getElementById('login-screen').classList.remove('hidden');
+            document.getElementById('admin-dashboard').classList.add('hidden');
+        }
+
+        function showAdminDashboard() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('admin-dashboard').classList.remove('hidden');
+            document.getElementById('admin-email-display').textContent = auth.currentUser.email;
+            
+            // Load dashboard data
+            loadDashboardData();
+            loadChatList();
+            
+            // Setup real-time listeners
+            setupRealtimeListeners();
+        }
+
+        function setupRealtimeListeners() {
+            // Listen for new chats
+            db.collection('chats')
+                .orderBy('lastUpdated', 'desc')
+                .onSnapshot((snapshot) => {
+                    loadChatList();
+                    updateActiveChatsCount();
+                });
+
+            // Listen for new orders
+            db.collection('orders')
+                .orderBy('createdAt', 'desc')
+                .onSnapshot((snapshot) => {
+                    loadDashboardData();
+                });
+        }
+
+        function updateActiveChatsCount() {
+            db.collection('chats').get().then((snapshot) => {
+                document.getElementById('active-chats').textContent = snapshot.size;
+            });
+        }
+
+        async function loadDashboardData() {
+            try {
+                // Get orders
+                const ordersSnapshot = await db.collection('orders').get();
+                const orders = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Get users
+                const usersSnapshot = await db.collection('users').get();
+                const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Get active chats
+                const chatsSnapshot = await db.collection('chats').get();
+                const activeChats = chatsSnapshot.docs.length;
+                
+                // Update stats
+                document.getElementById('total-orders').textContent = orders.length;
+                document.getElementById('total-users').textContent = users.length;
+                document.getElementById('active-chats').textContent = activeChats;
+                
+                // Calculate total revenue
+                const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+                document.getElementById('total-revenue').textContent = `₪${totalRevenue.toFixed(2)}`;
+                
+                // Load recent orders
+                loadRecentOrders(orders);
+                
+            } catch (error) {
+                console.error('Error loading dashboard data:', error);
+            }
+        }
+
+        function loadRecentOrders(orders) {
+            const recentOrdersBody = document.getElementById('recent-orders-body');
+            recentOrdersBody.innerHTML = '';
+            
+            // Sort orders by date (newest first) and take first 5
+            const sortedOrders = orders.sort((a, b) => {
+                const dateA = a.createdAt ? a.createdAt.toDate() : new Date(0);
+                const dateB = b.createdAt ? b.createdAt.toDate() : new Date(0);
+                return dateB - dateA;
+            }).slice(0, 5);
+            
+            sortedOrders.forEach(order => {
+                const date = order.createdAt ? order.createdAt.toDate().toLocaleDateString() : 'N/A';
+                const statusClass = getStatusClass(order.status);
+                
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-700';
+                row.innerHTML = `
+                    <td class="px-4 py-3 font-medium">${order.id.substring(0, 8)}...</td>
+                    <td class="px-4 py-3">${order.userEmail || 'N/A'}</td>
+                    <td class="px-4 py-3">${date}</td>
+                    <td class="px-4 py-3">₪${(order.total || 0).toFixed(2)}</td>
+                    <td class="px-4 py-3">
+                        <span class="${statusClass} px-2 py-1 rounded-full text-xs">${order.status || 'confirmed'}</span>
+                    </td>
+                `;
+                recentOrdersBody.appendChild(row);
+            });
+            
+            feather.replace();
+        }
+
+        async function loadChatList() {
+            try {
+                const chatsSnapshot = await db.collection('chats')
+                    .orderBy('lastUpdated', 'desc')
+                    .get();
+                    
+                const chatList = document.getElementById('chat-list');
+                chatList.innerHTML = '';
+                
+                if (chatsSnapshot.empty) {
+                    chatList.innerHTML = `
+                        <div class="text-center py-8">
+                            <i data-feather="message-circle" class="w-8 h-8 mx-auto text-gray-500 mb-2"></i>
+                            <p class="text-gray-400">No active conversations</p>
+                        </div>
+                    `;
+                    feather.replace();
+                    return;
+                }
+                
+                chatsSnapshot.forEach(doc => {
+                    const chat = { id: doc.id, ...doc.data() };
+                    const lastMessage = chat.messages && chat.messages.length > 0 
+                        ? chat.messages[chat.messages.length - 1] 
+                        : { text: "No messages yet", timestamp: new Date() };
+                    
+                    // Check if there are unread messages from user
+                    const unreadCount = chat.messages ? chat.messages.filter(msg => 
+                        msg.sender === 'user' && !msg.readByAdmin
+                    ).length : 0;
+                    
+                    const chatItem = document.createElement('div');
+                    chatItem.className = `p-3 rounded cursor-pointer hover:bg-gray-700 transition ${currentChatUserId === chat.userId ? 'bg-gray-700' : 'bg-gray-750'}`;
+                    chatItem.innerHTML = `
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center space-x-2">
+                                    <h4 class="font-medium text-white truncate">${chat.userName || 'Unknown User'}</h4>
+                                    ${unreadCount > 0 ? `<span class="bg-red-500 text-white text-xs px-2 py-1 rounded-full">${unreadCount}</span>` : ''}
+                                </div>
+                                <p class="text-gray-400 text-sm truncate">${chat.userEmail}</p>
+                                <p class="text-gray-500 text-sm mt-1 truncate">${lastMessage.text}</p>
+                            </div>
+                            <span class="text-gray-500 text-xs whitespace-nowrap ml-2">${formatTime(lastMessage.timestamp)}</span>
+                        </div>
+                    `;
+                    
+                    chatItem.addEventListener('click', () => openChat(chat.userId, chat.userName, chat.userEmail));
+                    chatList.appendChild(chatItem);
+                });
+                
+                feather.replace();
+                
+            } catch (error) {
+                console.error('Error loading chat list:', error);
+            }
+        }
+
+        function openChat(userId, userName, userEmail) {
+            currentChatUserId = userId;
+            
+            // Update UI
+            document.getElementById('no-chat-selected').classList.add('hidden');
+            document.getElementById('chat-window').classList.remove('hidden');
+            document.getElementById('chat-user-name').textContent = userName || 'Unknown User';
+            document.getElementById('chat-user-email').textContent = userEmail;
+            
+            // Load messages
+            loadChatMessages(userId);
+            
+            // Highlight active chat
+            document.querySelectorAll('#chat-list > div').forEach(item => {
+                item.classList.remove('bg-gray-700');
+            });
+            event.currentTarget.classList.add('bg-gray-700');
+        }
+
+        function closeChat() {
+            currentChatUserId = null;
+            document.getElementById('no-chat-selected').classList.remove('hidden');
+            document.getElementById('chat-window').classList.add('hidden');
+            
+            if (chatUnsubscribe) {
+                chatUnsubscribe();
+                chatUnsubscribe = null;
+            }
+            
+            // Remove highlight from all chats
+            document.querySelectorAll('#chat-list > div').forEach(item => {
+                item.classList.remove('bg-gray-700');
+            });
+        }
+
+        function loadChatMessages(userId) {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = '<div class="text-center py-4 text-gray-500">Loading messages...</div>';
+            
+            // Unsubscribe from previous listener
+            if (chatUnsubscribe) {
+                chatUnsubscribe();
+            }
+            
+            // Subscribe to real-time updates
+            chatUnsubscribe = db.collection('chats')
+                .doc(userId)
+                .onSnapshot((doc) => {
+                    if (doc.exists) {
+                        const chat = doc.data();
+                        displayMessages(chat.messages || []);
+                    } else {
+                        chatMessages.innerHTML = '<div class="text-center py-4 text-gray-500">No messages yet</div>';
+                    }
+                }, (error) => {
+                    console.error('Error loading messages:', error);
+                    chatMessages.innerHTML = '<div class="text-center py-4 text-red-500">Error loading messages</div>';
+                });
+        }
+
+        function displayMessages(messages) {
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = '';
+            
+            if (messages.length === 0) {
+                chatMessages.innerHTML = '<div class="text-center py-4 text-gray-500">No messages yet. Start the conversation!</div>';
+                return;
+            }
+            
+            messages.forEach(message => {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chat-message ${message.sender === 'admin' ? 'admin-message' : 'user-message'}`;
+                messageDiv.innerHTML = `
+                    <div class="text-sm">${message.text}</div>
+                    <div class="text-xs mt-1 opacity-70">${formatTime(message.timestamp)}</div>
+                `;
+                chatMessages.appendChild(messageDiv);
+            });
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        async function sendMessage() {
+            if (!currentChatUserId) return;
+            
+            const input = document.getElementById('chat-input');
+            const messageText = input.value.trim();
+            
+            if (!messageText) return;
+            
+            try {
+                const message = {
+                    text: messageText,
+                    sender: 'admin',
+                    timestamp: new Date()
+                };
+                
+                // Get current messages and add new one
+                const chatDoc = await db.collection('chats').doc(currentChatUserId).get();
+                const currentMessages = chatDoc.data().messages || [];
+                const updatedMessages = [...currentMessages, message];
+                
+                await db.collection('chats').doc(currentChatUserId).update({
+                    messages: updatedMessages,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                // Clear input
+                input.value = '';
+                
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Error sending message: ' + error.message);
+            }
+        }
+
+        async function loadOrders() {
+            try {
+                const ordersSnapshot = await db.collection('orders').get();
+                const orders = ordersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderOrdersTable(orders);
+            } catch (error) {
+                console.error('Error loading orders:', error);
+            }
+        }
+
+        function renderOrdersTable(orders) {
+            const ordersTableBody = document.getElementById('orders-table-body');
+            ordersTableBody.innerHTML = '';
+            
+            orders.forEach(order => {
+                const date = order.createdAt ? order.createdAt.toDate().toLocaleDateString() : 'N/A';
+                const status = order.status || 'confirmed';
+                const statusClass = getStatusClass(status);
+                const itemsCount = order.items ? order.items.length : 0;
+                
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-700';
+                row.innerHTML = `
+                    <td class="px-4 py-3 font-medium">${order.id.substring(0, 8)}...</td>
+                    <td class="px-4 py-3">${order.userEmail || 'N/A'}</td>
+                    <td class="px-4 py-3">${date}</td>
+                    <td class="px-4 py-3">${itemsCount}</td>
+                    <td class="px-4 py-3">₪${(order.total || 0).toFixed(2)}</td>
+                    <td class="px-4 py-3">
+                        <span class="${statusClass} px-2 py-1 rounded-full text-xs">${status}</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <select class="status-select bg-gray-700 text-white rounded px-2 py-1 text-xs" data-id="${order.id}">
+                            <option value="confirmed" ${status === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                            <option value="shipped" ${status === 'shipped' ? 'selected' : ''}>Shipped</option>
+                            <option value="delivered" ${status === 'delivered' ? 'selected' : ''}>Delivered</option>
+                            <option value="cancelled" ${status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </td>
+                `;
+                ordersTableBody.appendChild(row);
+            });
+            
+            feather.replace();
+            
+            // Add event listeners for status changes
+            document.querySelectorAll('.status-select').forEach(select => {
+                select.addEventListener('change', function() {
+                    updateOrderStatus(this.dataset.id, this.value);
+                });
+            });
+        }
+
+        async function updateOrderStatus(orderId, newStatus) {
+            try {
+                await db.collection('orders').doc(orderId).update({
+                    status: newStatus
+                });
+                
+                // Show success message
+                alert(`Order status updated to ${newStatus}`);
+                
+                // Reload orders to reflect the change
+                loadOrders();
+                loadDashboardData();
+            } catch (error) {
+                console.error('Error updating order status:', error);
+                alert('Error updating order status');
+            }
+        }
+
+        async function loadUsers() {
+            try {
+                const usersSnapshot = await db.collection('users').get();
+                const users = usersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderUsersTable(users);
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        function renderUsersTable(users) {
+            const usersTableBody = document.getElementById('users-table-body');
+            usersTableBody.innerHTML = '';
+            
+            users.forEach(user => {
+                const joinDate = user.createdAt ? user.createdAt.toDate().toLocaleDateString() : 'N/A';
+                const ordersCount = user.orders ? user.orders.length : 0;
+                
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-700';
+                row.innerHTML = `
+                    <td class="px-4 py-3 font-medium">${user.id.substring(0, 8)}...</td>
+                    <td class="px-4 py-3">${user.name || 'N/A'}</td>
+                    <td class="px-4 py-3">${user.email}</td>
+                    <td class="px-4 py-3">${joinDate}</td>
+                    <td class="px-4 py-3">${ordersCount}</td>
+                `;
+                usersTableBody.appendChild(row);
+            });
+            
+            feather.replace();
+        }
+
+        function getStatusClass(status) {
+            switch(status) {
+                case 'confirmed':
+                    return 'bg-blue-500 bg-opacity-20 text-blue-400';
+                case 'shipped':
+                    return 'bg-yellow-500 bg-opacity-20 text-yellow-400';
+                case 'delivered':
+                    return 'bg-green-500 bg-opacity-20 text-green-400';
+                case 'cancelled':
+                    return 'bg-red-500 bg-opacity-20 text-red-400';
+                default:
+                    return 'bg-gray-500 bg-opacity-20 text-gray-400';
+            }
+        }
+
+        function formatTime(timestamp) {
+            if (!timestamp) return '';
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return 'Just now';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+            return date.toLocaleDateString();
+        }
+    </script>
+
+<!-- Mobile fixed cart button (added by assistant) -->
+<div id="mobile-cart-btn" class="mobile-cart hidden fixed bottom-4 right-4 z-50">
+  <a href="cart.html" class="inline-flex items-center px-4 py-3 rounded-full bg-red-600 text-white shadow-lg">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path d="M16 11V3a1 1 0 00-1-1H5a1 1 0 00-1 1v8H2v2h1.2l1.6 6h8.4l1.6-6H18v-2h-2zM6 4h8v7H6V4z"/></svg>
+    <span id="mobile-cart-count" class="font-medium">0</span>
+  </a>
+</div>
+
+<script>
+  (function(){
+    function updateCartBadge(){
+      try {
+        const cart = JSON.parse(localStorage.getItem('cart')) || [];
+        const count = cart.reduce((s,i)=>s+(i.quantity||1),0);
+        const el = document.getElementById('mobile-cart-count');
+        if(el) el.textContent = count;
+        const btn = document.getElementById('mobile-cart-btn');
+        if(btn){
+          if(count>0) btn.classList.remove('hidden');
+          else btn.classList.add('hidden');
+        }
+      } catch(e){ console.error(e); }
+    }
+    updateCartBadge();
+    window.addEventListener('storage', updateCartBadge);
+    document.addEventListener('DOMContentLoaded', updateCartBadge);
+  })();
+</script>
+<!-- End mobile cart button -->
+
+<!-- Assistant: chat widget (loads a small floating button) -->
+<link rel="stylesheet" href="assets/chat-widget.css">
+<script src="assets/chat-widget.js" defer></script>
+<!-- End assistant chat widget -->
+
+</body>
+</html>
